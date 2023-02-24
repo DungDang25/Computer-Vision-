@@ -20,19 +20,20 @@ class handDetector():
 
         #print(results.multi_hand_landmarks)
 
+        handsType = []
+
         if self.results.multi_hand_landmarks:
             for handLms in self.results.multi_hand_landmarks:
                 if draw:
                     self.mpDraw.draw_landmarks(img, handLms, self.mpHands.HAND_CONNECTIONS)
-        return img
-                # for id, lm in enumerate(handLms.landmark):
-                #     ##print(id, lm)
-                #     h, w, c= img.shape
-                #     cx, cy = int(lm.x*w), int(lm.y*h)
-                #     print(id, cx, cy)
-                #     if id == 0:
-                #         cv.circle(img, (cx, cy), 10, (255, 0, 255), cv.FILLED)        
-                # self.mpDraw.draw_landmarks(img, handLms, self.mpHands.HAND_CONNECTIONS)
+            for hand in self.results.multi_handedness:
+                # print(hand)
+                # print(hand.classification)
+                # print(hand.classification[0])
+                handType=hand.classification[0].label
+                handsType.append(handType)
+        
+        return img, handsType
 
     def findPosition(self, img, handNo=0, draw = True): 
 

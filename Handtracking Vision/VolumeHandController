@@ -40,7 +40,7 @@ vlock = True
 while True:
     success, img = cap.read()
 
-    img = detector.findHands(img)
+    img, handsType = detector.findHands(img)
     lmList = detector.findPosition(img, draw=False)
 
     if len(lmList) != 0:
@@ -86,15 +86,6 @@ while True:
             #(vol)
             volume.SetMasterVolumeLevel(vol, None)
         
-
-
-        
-
-
-
-
-
-
     cTime = time.time()
     fps = 1/(cTime-pTime)
     pTime = cTime
