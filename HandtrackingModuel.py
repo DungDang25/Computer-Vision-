@@ -21,12 +21,23 @@ class handDetector():
         self.results = self.hands.process(imgRGB)
 
         #print(results.multi_hand_landmarks)
-
+        
+        handsType = []
         if self.results.multi_hand_landmarks:
             for handLms in self.results.multi_hand_landmarks:
                 if draw:
                     self.mpDraw.draw_landmarks(img, handLms, self.mpHands.HAND_CONNECTIONS)
-        return img
+
+        if self.results.multi_hand_landmarks != None:
+            #print(results.multi_handedness)
+            for hand in self.results.multi_handedness:
+                #print(hand)
+                #print(hand.classification)
+                #print(hand.classification[0])
+                handType=hand.classification[0].label
+                handsType.append(handType)
+
+        return img, handsType
                 
 
     def findPosition(self, img, handNo = 0, draw = True):

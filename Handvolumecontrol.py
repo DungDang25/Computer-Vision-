@@ -46,7 +46,6 @@ while True:
 
         length = math.hypot(x2-x1, y2-y1)
         # print(length)
-
         #Hand range 50 - 175
         # Volume range -63.5 - 0
 
