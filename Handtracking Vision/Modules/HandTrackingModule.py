@@ -49,8 +49,37 @@ class handDetector():
                 self.lmList.append([id, cx, cy])
                 if draw:
                     cv.circle(img, (cx, cy), 10, (255, 0, 255), cv.FILLED)      
-
         return self.lmList
+
+    def countFingers(self, lmList, handsType):
+        tipIds = [4, 8, 12, 16, 20]
+
+        fingers = []
+
+        if (len(handsType) <= 1):
+            if (handsType[0] == 'Right'):
+                # Thumb 
+                if lmList[tipIds[0]][1] < lmList[tipIds[0]-1][1]:
+                    fingers.append(1)
+                else:
+                    fingers.append(0)
+            if (handsType[0] == 'Left'):
+                # Thumb 
+                if lmList[tipIds[0]][1] > lmList[tipIds[0]-1][1]:
+                    fingers.append(1)
+                else:
+                    fingers.append(0)
+
+            # 4 Fingers
+            for id in range(1, 5):
+                if lmList[tipIds[id]][2] < lmList[tipIds[id]-2][2]:
+                    fingers.append(1)
+                else:
+                    fingers.append(0)
+
+        return fingers
+
+
 
 
 

@@ -3,94 +3,72 @@ import time
 import numpy as np
 from Modules import HandTrackingModule as HTM
 import math
-
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
-#####################
-wCam, hCam = 640, 480
-#####################
+###############################
+wCam , hCam = 1280, 720
+###############################
 
-pTime = 0
 cap = cv.VideoCapture(0)
 cap.set(3, wCam)
 cap.set(4, hCam)
+pTime = 0
 
-detector = HTM.handDetector()
+detector = HTM.handDetector(detectionCon=0.75)
 
-## Pycaw
 devices = AudioUtilities.GetSpeakers()
-interface = devices.Activate(
-    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 volume = cast(interface, POINTER(IAudioEndpointVolume))
 # volume.GetMute()
 # volume.GetMasterVolumeLevel()
 volRange = volume.GetVolumeRange()
-volume.SetMasterVolumeLevel(-20, None)
-
 minVol = volRange[0]
 maxVol = volRange[1]
 
-vlock = True
-
-
-
-
 while True:
     success, img = cap.read()
-
     img, handsType = detector.findHands(img)
     lmList = detector.findPosition(img, draw=False)
 
     if len(lmList) != 0:
+        # print(lmList[4], lmList[8])
 
-        # pinky lock
-        xp, yp = lmList[20][1], lmList[20][2]
-        x0, y0 = lmList[0][1], lmList[0][2]
-        cv.circle(img, (xp,yp), 15, (255,0,255), cv.FILLED)
-        cv.circle(img, (x0,y0), 15, (255,0,255), cv.FILLED)
-        cv.line(img, (x0,y0), (xp,yp), (255, 0 ,255), 3)
-        plength = math.hypot(xp-x0, yp-y0)
+        # Filter based on size
 
-        xm, ym = lmList[20][1], lmList[20][2]
-        xm2, ym2 = lmList[0][1], lmList[0][2]
-        cv.circle(img, (xm,ym), 15, (255,0,255), cv.FILLED)
-        cv.circle(img, (xm2,ym2), 15, (255,0,255), cv.FILLED)
-        cv.line(img, (xm2,ym2), (xm,ym), (255, 0 ,255), 3)
-        mlength = math.hypot(xm-xm2, ym-ym2)
-        
+        # Find Distance between index and thumb
 
-        if plength>100:
-            vlock = False
+        x1, y1 = lmList[4][1], lmList[4][2]
+        x2, y2 = lmList[8][1], lmList[8][2]
+        cx, cy = (x1+x2)//2, (y1+y2)//2
 
-        if vlock == False: 
-            x1, y1 = lmList[4][1], lmList[4][2]
-            x2, y2 = lmList[8][1], lmList[8][2]
+        cv.circle(img, (x1,y1), 15, (255,0,255), cv.FILLED)
+        cv.circle(img, (x2,y2), 15, (255,0,255), cv.FILLED)
+        cv.line(img, (x1,y1),(x2,y2), (255,0,255), 3)
+        cv.circle(img, (cx,cy), 15, (255,0,255), cv.FILLED)
 
-            cv.circle(img, (x1,y1), 15, (255,0,255), cv.FILLED)
-            cv.circle(img, (x2,y2), 15, (255,0,255), cv.FILLED)
-            cv.line(img, (x1,y1), (x2,y2), (255, 0 ,255), 3)
+        length = math.hypot(x2-x1, y2-y1)
+        # print(length)
 
-            # get center of line
-            cx, cy = (x1+x2)//2, (y1+y2)//2
-            cv.circle(img, (cx,cy), 15, (255,0,255), cv.FILLED)
+        #Hand range 50 - 175
+        # Volume range -63.5 - 0
 
-            # get line length
-            length = math.hypot(x2-x1, y2-y1)
-            cv.putText(img, "Length {:.2f}".format(length),(10,100), cv.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 1)
+        vol = np.interp(length, [25, 100], [-63.5, 0])
+        # print(vol)
+        volume.SetMasterVolumeLevel(vol, None)
 
-            # Hand range 50 -200
-            # Volume Range -96 - 0
-            vol = np.interp(length,[20,170],[minVol, maxVol])
-            #(vol)
-            volume.SetMasterVolumeLevel(vol, None)
-        
+        cv.putText(img, f'Length: {float(length)}', (350,50), cv.FONT_HERSHEY_COMPLEX, 1, (255,0,0), 2)
+        if length < 50:
+            cv.circle(img, (cx,cy), 15, (0,255,0), cv.FILLED)
+
     cTime = time.time()
     fps = 1/(cTime-pTime)
     pTime = cTime
 
-    cv.putText(img, f'FPS: {int(fps)}',(10,70), cv.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 1)
+    cv.putText(img, f'FPS: {int(fps)}', (40,50), cv.FONT_HERSHEY_COMPLEX, 1, (255,0,0), 2)
 
     cv.imshow("Img", img)
     cv.waitKey(1)
+
+    
